@@ -27,7 +27,7 @@ pipeline = DiffusionPipeline.from_pretrained(
         quant_mapping={"transformer": TorchAoConfig("float8dq_e4m3_row")}
     )
 ).to("cuda")
-pipeline.transformer.set_attn_processor(FlashFusedFluxAttnProcessor3_0())
+pipeline.transformer.set_attn_processor(FlashFluxAttnProcessor3_0())
 
 pipe_kwargs = {
     "prompt": "{trigger_word} A cat holding a sign that says hello world",
