@@ -18,10 +18,13 @@ LORA_MAPPINGS = [
 
 if __name__ == "__main__":
     args = parse_args()
+    print(f"{args=}")
+    
     args.out_dir.mkdir(exist_ok=True)
     bench_manager = BenchmarkManager(args)
     start_time = time.time()
     out_dict = bench_manager.run_benchmark(LORA_MAPPINGS)
     end_time = time.time()
+    
     print(f"Benchmark completed in {(end_time - start_time):.2f} seconds.")
-    print(out_dict)
+    print(f"{out_dict=}")

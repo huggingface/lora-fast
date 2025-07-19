@@ -9,6 +9,7 @@ import functools
 import json
 from pathlib import Path
 
+
 class BenchmarkManager:
     def __init__(self, args):
         self.args = args
@@ -18,14 +19,33 @@ class BenchmarkManager:
 
     def load_pipeline(self) -> DiffusionPipeline:
         quantization_config = None
+        quant_mapping = None
         args = self.args
+        
         if not args.disable_fp8:
-            quantization_config = PipelineQuantizationConfig(
-                quant_mapping={"transformer": TorchAoConfig("float8dq_e4m3_row")}
-            )
+            quant_mapping = {"transformer": TorchAoConfig("float8dq_e4m3_row")}
+        if args.quantize_t5:
+            from transformers import BitsAndBytesConfig
+
+            text_quant = {
+                "text_encoder_2": BitsAndBytesConfig(
+                    load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_quant_type="nf4"
+                )
+            }
+            if isinstance(quant_mapping, dict):
+                quant_mapping.update(text_quant)
+            else:
+                quant_mapping = text_quant
+        if quant_mapping is not None:
+            quantization_config = PipelineQuantizationConfig(quant_mapping=quant_mapping)
+
         pipe = DiffusionPipeline.from_pretrained(
             args.ckpt_id, torch_dtype=torch.bfloat16, quantization_config=quantization_config
-        ).to("cuda")
+        )
+        if args.offload:
+            pipe.enable_model_cpu_offload()
+        else:
+            pipe = pipe.to("cuda")
         if not args.disable_fa3:
             pipe.transformer.set_attn_processor(FlashFluxAttnProcessor3_0())
 
@@ -53,7 +73,10 @@ class BenchmarkManager:
 
         # Only compile once when the LoRA is loaded for the first time.
         if self.loras_loaded == 0 and not args.disable_compile:
-            pipe.transformer.compile(fullgraph=True)
+            if not args.offload:
+                pipe.transformer.compile(fullgraph=True)
+            else:
+                pipe.transformer.compile()
         self.loras_loaded += 1
 
     @staticmethod
@@ -147,7 +170,19 @@ def parse_args():
         "--disable_recompile_error", action="store_true", help="Disables triggering recompilation errors."
     )
     parser.add_argument("--disable_hotswap", action="store_true", help="Disables hotswapping LoRA adapters.")
+    parser.add_argument("--quantize_t5", action="store_true", help="If quantizing the T5 with NF4 quantization.")
+    parser.add_argument(
+        "--offload",
+        action="store_true",
+        help="If offloading of models should be enabled. Useful for consumer GPUs. Useful for consumer GPUs.",
+    )
     parser.add_argument("--max_rank", type=int, default=128, help="Maximum rank to use when hotswapping LoRAs.")
     parser.add_argument("--out_dir", type=Path, default="output", help="Output directory to use to store artifacts.")
     args = parser.parse_args()
+
+    if args.offload and not args.disable_fp8:
+        raise ValueError("FP8 quantization from TorchAO doesn't support offloading yet.")
+    if args.offload and not args.disable_compile and not args.disable_recompile_error:
+        raise ValueError("Recompilation error context must be disabled when using compilation with offloading.")
+    
     return args
