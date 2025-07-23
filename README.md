@@ -45,4 +45,4 @@ If you want to run a battery of different settings, some shell scripts are provi
 
 ## Standalone script
 
-The `inference_lora.py` script implements the optimizations in sequence and it is geared towards H100. Refer to it for a simpler reference than `run_benchmark.py`.
+The `inference_lora.py` script implements the optimizations in sequence and it is geared towards an H100. Refer to it for a simpler reference than `run_benchmark.py`.
