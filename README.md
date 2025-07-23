@@ -10,6 +10,19 @@ The included benchmark script allows to experiment with:
 - LoRA hot-swapping
 - CPU offloading
 
+## Key results
+
+| Option              | Time (s) ⬇️ | Speedup (vs baseline) ⬆️ | Notes                                                                        |
+|---------------------|-------------|--------------------------|------------------------------------------------------------------------------|
+| baseline            | 7.8910      | –                        | Baseline                                                                     |
+| optimized           | 3.5464      | 2.23×                    | Hotswapping \+ compilation without recompilation hiccups (FP8 on by default) |
+| no\_fp8             | 4.3520      | 1.81×                    | Same as optimized, but with FP8 quantization disabled                        |
+| no\_fa3             | 4.3020      | 1.84×                    | Disable FA3 (flash-attention v3)                                             |
+| baseline \+ compile | 5.0920      | 1.55×                    | Compilation on, but suffers from intermittent recompilation stalls           |
+| no\_fa3\_fp8        | 5.0850      | 1.55×                    | Disable FA3 and FP8                                                          |
+| no\_compile\_fp8    | 7.5190      | 1.05×                    | Disable FP8 quantization and compilation                                     |
+| no\_compile         | 10.4340     | 0.76×                    | Disable compilation: the slowest setting                                     |
+
 ## Installation
 
 The requirements for this repository are listed in the `requirements.txt`, please ensure they are installed in your Python environment, e.g. by running:
