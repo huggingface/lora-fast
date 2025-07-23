@@ -175,34 +175,34 @@ def parse_args():
     parser.add_argument(
         "--disable_recompile_error",
         action="store_true",
-        help="Disables triggering recompilation errors.",
+        help="Disables raising recompilation errors.",
     )
     parser.add_argument(
         "--disable_hotswap",
         action="store_true",
-        help="Disables hotswapping LoRA adapters.",
+        help="Disables hotswapping of LoRA adapters.",
     )
     parser.add_argument(
         "--quantize_t5",
         action="store_true",
-        help="If quantizing the T5 with NF4 quantization.",
+        help="Whether to quantize the T5 with NF4 quantization.",
     )
     parser.add_argument(
         "--offload",
         action="store_true",
-        help="If offloading of models should be enabled. Useful for consumer GPUs. Useful for consumer GPUs.",
+        help="If offloading of models should be enabled. Useful for consumer GPUs",
     )
     parser.add_argument(
         "--max_rank",
         type=int,
         default=128,
-        help="Maximum rank to use when hotswapping LoRAs.",
+        help="Maximum rank to use when hotswapping LoRAs, should be largest rank among all LoRAs (default 128).",
     )
     parser.add_argument(
         "--out_dir",
         type=Path,
         default="output",
-        help="Output directory to use to store artifacts.",
+        help="Output directory used to store artifacts.",
     )
     args = parser.parse_args()
 
