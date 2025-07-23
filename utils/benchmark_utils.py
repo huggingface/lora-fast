@@ -1,13 +1,15 @@
-from diffusers import DiffusionPipeline, TorchAoConfig
-from .fa3_processor import FlashFluxAttnProcessor3_0
-from diffusers.quantizers import PipelineQuantizationConfig
-import torch
-import torch.utils.benchmark as benchmark
-from contextlib import nullcontext
 import argparse
 import functools
 import json
+from contextlib import nullcontext
 from pathlib import Path
+from typing import Any
+
+import torch
+import torch.utils.benchmark as benchmark
+from diffusers import DiffusionPipeline, TorchAoConfig
+from .fa3_processor import FlashFluxAttnProcessor3_0
+from diffusers.quantizers import PipelineQuantizationConfig
 
 
 class BenchmarkManager:
@@ -21,7 +23,7 @@ class BenchmarkManager:
         quantization_config = None
         quant_mapping = None
         args = self.args
-        
+
         if not args.disable_fp8:
             quant_mapping = {"transformer": TorchAoConfig("float8dq_e4m3_row")}
         if args.quantize_t5:
@@ -29,7 +31,9 @@ class BenchmarkManager:
 
             text_quant = {
                 "text_encoder_2": BitsAndBytesConfig(
-                    load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_quant_type="nf4"
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.bfloat16,
+                    bnb_4bit_quant_type="nf4",
                 )
             }
             if isinstance(quant_mapping, dict):
@@ -40,7 +44,9 @@ class BenchmarkManager:
             quantization_config = PipelineQuantizationConfig(quant_mapping=quant_mapping)
 
         pipe = DiffusionPipeline.from_pretrained(
-            args.ckpt_id, torch_dtype=torch.bfloat16, quantization_config=quantization_config
+            args.ckpt_id,
+            torch_dtype=torch.bfloat16,
+            quantization_config=quantization_config,
         )
         if args.offload:
             pipe.enable_model_cpu_offload()
@@ -84,7 +90,7 @@ class BenchmarkManager:
         pipe_kwargs["generator"] = torch.manual_seed(args.seed)
         return pipe(**pipe_kwargs).images[0]
 
-    def run_benchmark(self, lora_mapping: dict) -> dict:
+    def run_benchmark(self, lora_mapping: list[dict[str, str]]) -> dict[str, Any]:
         args = self.args
         ctx = nullcontext()
         if not args.disable_compile and not args.disable_recompile_error:
@@ -108,7 +114,7 @@ class BenchmarkManager:
                     image = self.run_inference(self.pipe, pipe_kwargs, args)
                 # benchmark.
                 time = benchmark_fn(inference_callable)
-                timings.append(float(f"{time :.3f}"))
+                timings.append(float(f"{time:.3f}"))
             images.append(image)
 
         # serialize artifacts.
@@ -167,22 +173,42 @@ def parse_args():
     parser.add_argument("--disable_fp8", action="store_true", help="Disables use of FP8 quantization")
     parser.add_argument("--disable_compile", action="store_true", help="Disables torch.compile.")
     parser.add_argument(
-        "--disable_recompile_error", action="store_true", help="Disables triggering recompilation errors."
+        "--disable_recompile_error",
+        action="store_true",
+        help="Disables triggering recompilation errors.",
     )
-    parser.add_argument("--disable_hotswap", action="store_true", help="Disables hotswapping LoRA adapters.")
-    parser.add_argument("--quantize_t5", action="store_true", help="If quantizing the T5 with NF4 quantization.")
+    parser.add_argument(
+        "--disable_hotswap",
+        action="store_true",
+        help="Disables hotswapping LoRA adapters.",
+    )
+    parser.add_argument(
+        "--quantize_t5",
+        action="store_true",
+        help="If quantizing the T5 with NF4 quantization.",
+    )
     parser.add_argument(
         "--offload",
         action="store_true",
         help="If offloading of models should be enabled. Useful for consumer GPUs. Useful for consumer GPUs.",
     )
-    parser.add_argument("--max_rank", type=int, default=128, help="Maximum rank to use when hotswapping LoRAs.")
-    parser.add_argument("--out_dir", type=Path, default="output", help="Output directory to use to store artifacts.")
+    parser.add_argument(
+        "--max_rank",
+        type=int,
+        default=128,
+        help="Maximum rank to use when hotswapping LoRAs.",
+    )
+    parser.add_argument(
+        "--out_dir",
+        type=Path,
+        default="output",
+        help="Output directory to use to store artifacts.",
+    )
     args = parser.parse_args()
 
     if args.offload and not args.disable_fp8:
         raise ValueError("FP8 quantization from TorchAO doesn't support offloading yet.")
     if args.offload and not args.disable_compile and not args.disable_recompile_error:
         raise ValueError("Recompilation error context must be disabled when using compilation with offloading.")
-    
+
     return args
