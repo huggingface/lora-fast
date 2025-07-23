@@ -28,4 +28,4 @@ Run the benchmarks using the provided `run_benchmark.py` script. To check the av
 python run_benchmark.py --help
 ```
 
-If you want to run a battery of different settings, some shell scripts are provided to achieve that. Use `run_experiments.sh` if you have a server GPU like an H100. Use `run_exps_rtx_4090.sh` if you have a consumer GPU with 24 GB of memory, like an RTX 4090.
+If you want to run a battery of different settings, some shell scripts are provided to achieve that. Use `run_experiments.sh` if you have a server GPU like an H100. Use `run_exps_rtx_4090.sh` if you have a consumer GPU with 24 GB of memory, like an RTX 4090. The benchmark data and sample images are stored by default in the `results/` directory.
