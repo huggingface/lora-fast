@@ -1,6 +1,6 @@
 # lora-fast
 
-Minimal repository to demonstrate fast LoRA inference with [Flux.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) using different settings that can help with speed or memory efficiency. Please check the accompanying blog post at <URL-TODO>.
+Minimal repository to demonstrate fast LoRA inference with [Flux.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) using different settings that can help with speed or memory efficiency. Please check the accompanying blog post at [this URL](https://huggingface.co/blog/lora-fast).
 
 The included benchmark script allows to experiment with:
 
@@ -42,3 +42,7 @@ python run_benchmark.py --help
 ```
 
 If you want to run a battery of different settings, some shell scripts are provided to achieve that. Use `run_experiments.sh` if you have a server GPU like an H100. Use `run_exps_rtx_4090.sh` if you have a consumer GPU with 24 GB of memory, like an RTX 4090. The benchmark data and sample images are stored by default in the `results/` directory.
+
+## Standalone script
+
+The `inference_lora.py` script implements the optimizations in sequence and it is geared towards H100. Refer to it for a simpler reference than `run_benchmark.py`.
